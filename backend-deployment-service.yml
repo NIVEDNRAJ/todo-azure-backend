@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-secret
+type: Opaque
+stringData:
+  connection-string: "Server=todo-mysql-db;Port=3306;Database=todo_db;User=root;Password=root_password;"
+  jwt-secret: "SuperSecretKeyForTodoAppAuthJWTToken2026"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: todo-backend
+  template:
+    metadata:
+      labels:
+        app: todo-backend
+    spec:
+      containers:
+        - name: todo-backend
+          image: <acr-name>.azurecr.io/todo-backend:latest
+          env:
+            - name: DB_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: connection-string
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: jwt-secret
+            - name: JWT_ISSUER
+              value: "TodoApi"
+            - name: JWT_AUDIENCE
+              value: "TodoUi"
+            - name: RUN_MIGRATIONS
+              value: "true"
+            - name: ENABLE_SWAGGER
+              value: "true"
+          ports:
+            - containerPort: 5000
+          readinessProbe:
+            httpGet:
+              path: /swagger/index.html
+              port: 5000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-web-api
+spec:
+  selector:
+    app: todo-backend
+  ports:
+    - port: 5000
+      targetPort: 5000
