@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        ACR_NAME = '<acr-name>' // User to replace with actual ACR name
+        ACR_NAME = 'nivedacr' // User to replace with actual ACR name
         ACR_REGISTRY = "${ACR_NAME}.azurecr.io"
         IMAGE_NAME = 'todo-backend'
         AKS_CREDENTIALS_ID = 'aks-kubeconfig'
@@ -18,7 +18,6 @@ pipeline {
 
         stage('Build Application') {
             steps {
-                bat 'dotnet restore'
                 bat 'dotnet build --configuration Release'
             }
         }
