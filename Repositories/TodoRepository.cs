@@ -33,7 +33,9 @@ public class TodoRepository : ITodoRepository
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(t => t.Title.Contains(search) || t.Description.Contains(search));
+            var searchLower = search.ToLower();
+            query = query.Where(t => t.Title.ToLower().Contains(searchLower) || 
+                                     (t.Description != null && t.Description.ToLower().Contains(searchLower)));
         }
 
         if (isCompleted.HasValue)

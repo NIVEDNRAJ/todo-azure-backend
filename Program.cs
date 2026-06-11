@@ -52,13 +52,21 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// Configure Database Connection String (MySQL)
-var connectionString = builder.Configuration["DB_CONNECTION_STRING"] ?? 
-                       builder.Configuration.GetConnectionString("DefaultConnection") ?? 
-                       "Server=localhost;Database=todo_db;User=root;Password=root_password;";
+if (builder.Configuration["USE_INMEMORY_DB"] == "true")
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseInMemoryDatabase("todo_db"));
+}
+else
+{
+    // Configure Database Connection String (MySQL)
+    var connectionString = builder.Configuration["DB_CONNECTION_STRING"] ?? 
+                           builder.Configuration.GetConnectionString("DefaultConnection") ?? 
+                           "Server=localhost;Database=todo_db;User=root;Password=root_password;";
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 30))));
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 30))));
+}
 
 // Configure JWT Authentication
 var jwtSecret = builder.Configuration["JWT_SECRET"] ?? "SuperSecretKeyForTodoAppAuthJWTToken2026";
@@ -141,7 +149,13 @@ if (builder.Configuration["RUN_MIGRATIONS"] == "true")
 {
     using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    dbContext.Database.Migrate();
+    if (dbContext.Database.IsRelational())
+    {
+        dbContext.Database.Migrate();
+    }
 }
 
 app.Run();
+
+public partial class Program { }
+
